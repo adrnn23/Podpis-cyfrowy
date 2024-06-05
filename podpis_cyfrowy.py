@@ -54,7 +54,7 @@ def chaos_image_mix(sequence, image):
         for x in range(size):
             new_image[y, x] = image[indices[(y * size) + x] % size, indices[(y * size) + x] % size]
 
-    cv2.imwrite("C:/Users/adria/Desktop/img1.png", new_image)
+    cv2.imwrite("C:/Desktop/img1.png", new_image)
     return new_image
 
 # Dzieli wejsciowa tablice bitowa na osiem plaszczyzn bitowych
@@ -158,13 +158,13 @@ img1 = getImage("https://www.youtube.com/watch?v=tFZLxK0nGJQ")
 img2 = getImage("https://www.youtube.com/watch?v=GakUUW9Anpo")
 img = mergeImages(img1, img2)
 
-cv2.imwrite("C:/Users/adria/Desktop/img.png", img)
+cv2.imwrite("C:/Desktop/img.png", img)
 
 #####################################################################
 # Podpis cyfrowy
 
 private_key, public_key = random_bits(img)
-with open('C:/Users/adria/Desktop/document.txt', 'r') as file:
+with open('C:/Desktop/document.txt', 'r') as file:
     document = file.read()
     document = bytes(document, 'utf-8')
 

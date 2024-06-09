@@ -10,20 +10,23 @@ def getImage(url):
     stream = streamlink.streams(url)
     stream_url = stream["best"].url
 
+    # Przechwycenie obrazu
     streamCap = cv2.VideoCapture(stream_url)
+    if not streamCap.isOpened():
+        raise IOError("Cannot open stream")
+
     success, image = streamCap.read()
+    if not success:
+        raise IOError("Failed to capture image from stream")
 
-    if success:
-        print("Image is saved successfully.")
-    else:
-        print("Image is not saved successfully.")
-
+    print("Image is saved successfully.")
     streamCap.release()
 
-    image=imageCorrection(image)
+    # Przetwarzanie obrazu
+    image = imageCorrection(image)
     return image
 
-# skalowanie obrazu, zapis obrazu w grayscale
+# Skalowanie obrazu, zapis obrazu w grayscale
 def imageCorrection(image):
     image = cv2.resize(image, (1024,1024))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -54,10 +57,9 @@ def chaos_image_mix(sequence, image):
         for x in range(size):
             new_image[y, x] = image[indices[(y * size) + x] % size, indices[(y * size) + x] % size]
 
-    cv2.imwrite("C:/Desktop/img1.png", new_image)
     return new_image
 
-# Dzieli wejsciowa tablice bitowa na osiem plaszczyzn bitowych
+# Dzieli wejściową tablice bitową na osiem plaszczyzn bitowych
 def split_bit_planes(input):
     a = np.unpackbits(input)
     
@@ -70,7 +72,7 @@ def split_bit_planes(input):
     
     return tuple(planes)
 
-# Laczy osiem plaszczyzn bitowych w jedna tablice bitowa
+# Łączy osiem plaszczyzn bitowych w jedna tablice bitowa
 def merge_planes(*args):
     num_planes = len(args)
     if num_planes != 8:
@@ -139,7 +141,7 @@ def random_bits(img):
     private_key, public_key = generate_keys(random)
     return private_key, public_key
 
-# Laczenie pobranych obrazow
+# Łączenie pobranych obrazow
 def mergeImages(img1, img2):
     if img1.shape != img2.shape:
         raise ValueError("Images do not have the same sizes.")
@@ -156,15 +158,16 @@ def mergeImages(img1, img2):
 
 img1 = getImage("https://www.youtube.com/watch?v=tFZLxK0nGJQ")
 img2 = getImage("https://www.youtube.com/watch?v=GakUUW9Anpo")
-img = mergeImages(img1, img2)
-
-cv2.imwrite("C:/Desktop/img.png", img)
+m_img = mergeImages(img1, img2)
+m_img2 = mergeImages(img2, img1)
 
 #####################################################################
 # Podpis cyfrowy
 
-private_key, public_key = random_bits(img)
-with open('C:/Desktop/document.txt', 'r') as file:
+private_key, public_key = random_bits(m_img)
+private_key_2, public_key_2 = random_bits(m_img2)
+
+with open('/Desktop/document.txt', 'r') as file:
     document = file.read()
     document = bytes(document, 'utf-8')
 
@@ -179,7 +182,9 @@ print("Podpis:", podpis.hex())
 print('\n')
 
 while(True):
-    opcja = int(input("Wybierz scenariusz (1 - podpis prawidlowy, 2 - modyfikacja dokumentu, 3 - wyjscie):"))
+    opcja = int(input("Wybierz scenariusz (1 - podpis prawidlowy, 2 - modyfikacja dokumentu - integralnosc, 3 - niezbywalnosc, 4 - wyjscie):"))
+
+    # Podpis prawidłowy
     if(opcja == 1):   
         document_R = document
         
@@ -194,6 +199,7 @@ while(True):
         except (ValueError, TypeError):
             print("Podpis cyfrowy nie jest poprawny")
 
+    # Integralność
     elif(opcja == 2):
         document_R = b'123'
         # Strona odbiorcza oblicza hash odebranej wiadomosci
@@ -207,8 +213,25 @@ while(True):
         except (ValueError, TypeError):
             print("Podpis cyfrowy nie jest poprawny")
 
+    # Niezbywalność
     elif(opcja == 3):
+        hash_A = SHA3_256.new(document)
+        podpis2 = pkcs1_15.new(private_key_2).sign(hash_A)
+
+        document_R = document
+        hash_B = SHA3_256.new(document_R)
+        
+        try:
+            print("Podpis 2:", podpis2.hex())
+            pkcs1_15.new(public_key).verify(hash_B, podpis2)
+            print("Podpis cyfrowy poprawny")
+        except (ValueError, TypeError):
+            print("Podpis cyfrowy nie jest poprawny")
+
+    # Wyjście
+    elif(opcja == 4):
         break
+
     else: 
         print("Nie ma takiego scenariusza.")
     print('\n')
